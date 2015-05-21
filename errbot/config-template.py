@@ -77,13 +77,18 @@ BOT_IDENTITY = {
     # XMPP (Jabber) mode
     'username': 'err@localhost',  # The JID of the user you have created for the bot
     'password': 'changeme',       # The corresponding password for this user
+    # 'server': ('host.domain.tld',5222), # server override
 
     ## HipChat mode (Comment the above if using this mode)
     # 'username' : '12345_123456@chat.hipchat.com',
     # 'password' : 'changeme',
     ## Group admins can create/view tokens on the settings page after logging
     ## in on HipChat's website
-    # 'token' : 'ed4b74d62833267d98aa99f312ff04',
+    # 'token'    : 'ed4b74d62833267d98aa99f312ff04',
+    ## If you're using HipChat server (self-hosted HipChat) then you should set
+    ## the endpoint below. If you don't use HipChat server but use the hosted version
+    ## of HipChat then you may leave this commented out.
+    # 'endpoint' : 'https://api.hipchat.com'
 
     ## Campfire mode (Comment the others above if using this mode)
     # 'subdomain': 'yatta',
