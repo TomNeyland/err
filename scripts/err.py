@@ -22,6 +22,8 @@ from os import path, sep, getcwd, access, W_OK
 from platform import system
 import inspect
 
+log = logging.getLogger(__name__)
+
 
 # noinspection PyUnusedLocal
 def debug(sig, frame):
@@ -91,11 +93,11 @@ def get_config(config_path, mode):
     config_fullpath = config_path + sep + 'config.py'
 
     if not path.exists(config_fullpath):
-        logging.error(
+        log.error(
             'I cannot find the file config.py in the directory %s \n'
             '(You can change this directory with the -c parameter see --help)' % config_path
         )
-        logging.info(
+        log.info(
             'You can use the template %s as a base and copy it to %s. \nYou can then customize it.' % (
                 path.dirname(template.__file__) + sep + 'config-template.py', config_path + sep)
         )
@@ -108,19 +110,19 @@ def get_config(config_path, mode):
             config = __import__('config_' + mode)
         except ImportError as ie:
             if not str(ie).startswith('No module named'):
-                logging.exception('Error while trying to load %s' % 'config_' + mode)
+                log.exception('Error while trying to load %s' % 'config_' + mode)
             config = __import__('config')
 
         diffs = [item for item in set(dir(template)) - set(dir(config)) if not item.startswith('_')]
         if diffs:
-            logging.error('You are missing configs defined from the template :')
+            log.error('You are missing configs defined from the template :')
             for diff in diffs:
-                logging.error('Missing config : %s' % diff)
+                log.error('Missing config : %s' % diff)
             exit(-1)
     except Exception as _:
-        logging.exception('I could not import your config from %s, please check the error below...' % config_fullpath)
+        log.exception('I could not import your config from %s, please check the error below...' % config_fullpath)
         exit(-1)
-    logging.info('Config check passed...')
+    log.info('Config check passed...')
     return config
 
 
@@ -141,6 +143,7 @@ if __name__ == "__main__":
     backend_group.add_argument('-C', '--campfire', action='store_true', help='campfire backend')
     backend_group.add_argument('-I', '--irc', action='store_true', help='IRC backend')
     backend_group.add_argument('-O', '--tox', action='store_true', help='TOX backend')
+    backend_group.add_argument('-S', '--slack', action='store_true', help='Slack backend')
     backend_group.add_argument('-T', '--text', action='store_true', help='locale text debug backend')
     backend_group.add_argument('-G', '--graphic', action='store_true', help='local graphical debug mode backend')
     backend_group.add_argument('-N', '--null', action='store_true', help='no backend')
@@ -158,8 +161,9 @@ if __name__ == "__main__":
         sys.path.insert(0, config_path)  # appends the current config in order to find config.py
     else:
         config_path = execution_dir
-    filtered_mode = [mname for mname in ('text', 'graphic', 'campfire', 'hipchat', 'irc', 'xmpp', 'tox', 'null') if
-                     args[mname]]
+    filtered_mode = [mname for mname in ('text', 'graphic', 'campfire', 'hipchat', 'irc',
+                                         'xmpp', 'tox', 'slack', 'null')
+                     if args[mname]]
     mode = filtered_mode[0] if filtered_mode else 'xmpp'  # default value
 
     config = get_config(config_path, mode)  # will exit if load fails
@@ -199,6 +203,11 @@ if __name__ == "__main__":
 
         return ToxBackend
 
+    def slack():
+        from errbot.backends.slack import SlackBackend
+
+        return SlackBackend
+
     def null():
         from errbot.backends.null import NullBackend
 
@@ -208,7 +217,7 @@ if __name__ == "__main__":
     # Check if at least we can start to log something before trying to start
     # the bot (esp. daemonize it).
 
-    logging.info("Checking for '%s'..." % config.BOT_DATA_DIR)
+    log.info("Checking for '%s'..." % config.BOT_DATA_DIR)
     if not path.exists(config.BOT_DATA_DIR):
         raise Exception("The data directory '%s' for the bot does not exist" % config.BOT_DATA_DIR)
     if not access(config.BOT_DATA_DIR, W_OK):
@@ -237,9 +246,9 @@ if __name__ == "__main__":
             daemon = Daemonize(app="err", pid=pid, action=action)
             daemon.start()
         except Exception:
-            logging.exception('Failed to daemonize the process')
+            log.exception('Failed to daemonize the process')
         exit(0)
     from errbot.main import main
 
     main(bot_class, logger, config)
-    logging.info('Process exiting')
+    log.info('Process exiting')
